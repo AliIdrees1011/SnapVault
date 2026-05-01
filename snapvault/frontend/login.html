@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>SnapVault — Sign In</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+
+<div class="login-wrap">
+  <div class="login-card">
+
+    <!-- LEFT BRAND PANEL -->
+    <div class="login-left" id="left-panel">
+      <div>
+        <div class="login-logo">Snap<span class="dot">●</span>Vault</div>
+        <div class="logo-line"></div>
+        <p class="login-tagline" style="margin-top:12px">Cloud-native photo sharing.<br/>Built on Azure. Built to scale.</p>
+      </div>
+
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-icon">📸</div>
+          <div class="feature-text"><strong>Role-Based Access</strong><span>Creator & Consumer accounts with JWT auth</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🤖</div>
+          <div class="feature-text"><strong>AI Auto-Tagging</strong><span>Azure Computer Vision tags every photo</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">💬</div>
+          <div class="feature-text"><strong>Sentiment Analysis</strong><span>Azure AI Language reads comment mood</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-text"><strong>CI/CD Pipeline</strong><span>GitHub Actions auto-deploys to Azure</span></div>
+        </div>
+      </div>
+
+      <div class="login-footer">
+        <div class="live-dot"></div>
+        Deployed on Microsoft Azure
+      </div>
+    </div>
+
+    <!-- RIGHT FORM PANEL -->
+    <div class="login-right">
+      <div class="login-form-wrap">
+        <div class="login-form-title">Welcome back</div>
+        <div class="login-form-sub">Sign in to your account or create a new one</div>
+
+        <div class="backend-status">
+          <div class="status-dot" id="sdot"></div>
+          <span id="stext">Checking connection…</span>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" id="tab-in"  onclick="switchTab('in')">Sign In</button>
+          <button class="tab-btn"        id="tab-reg" onclick="switchTab('reg')">Register</button>
+        </div>
+
+        <div class="alert alert-error"   id="aerr"></div>
+        <div class="alert alert-success" id="aok"></div>
+
+        <!-- SIGN IN -->
+        <div id="form-in">
+          <div class="form-group">
+            <label>Email</label>
+            <input class="form-control" type="email" id="in-email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <div class="input-wrap">
+              <input class="form-control" type="password" id="in-pw" placeholder="Your password" autocomplete="current-password"/>
+              <button class="pw-toggle" onclick="togglePw('in-pw',this)">👁</button>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" id="btn-in" onclick="doLogin()">
+            <span id="btn-in-txt">Sign In</span>
+            <span class="loader-inline" id="btn-in-ld" style="display:none"></span>
+          </button>
+          <div class="note-box" style="margin-top:1rem">
+            <strong>Consumer accounts</strong> — register on the Register tab.<br/>
+            <strong>Creator accounts</strong> — pre-provisioned, use creator@snapvault.com
+          </div>
+        </div>
+
+        <!-- REGISTER -->
+        <div id="form-reg" style="display:none">
+          <div class="form-group">
+            <label>Username</label>
+            <input class="form-control" type="text" id="reg-user" placeholder="choose a username" autocomplete="username"/>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input class="form-control" type="email" id="reg-email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <div class="input-wrap">
+              <input class="form-control" type="password" id="reg-pw" placeholder="Minimum 8 characters" autocomplete="new-password"/>
+              <button class="pw-toggle" onclick="togglePw('reg-pw',this)">👁</button>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" id="btn-reg" onclick="doRegister()">
+            <span id="btn-reg-txt">Create Account</span>
+            <span class="loader-inline" id="btn-reg-ld" style="display:none"></span>
+          </button>
+          <div class="note-box" style="margin-top:1rem">
+            Registering creates a <strong>Consumer</strong> account.<br/>
+            Browse, comment and rate photos.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg"></span></div>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // Redirect if already logged in
+  (function(){ const t=localStorage.getItem('sv_token'),r=localStorage.getItem('sv_role');if(t)window.location.href=r==='creator'?'creator.html':'index.html'; })();
+
+  // Animated particles
+  const panel=document.getElementById('left-panel');
+  for(let i=0;i<14;i++){const p=document.createElement('div');p.style.cssText=`position:absolute;border-radius:50%;background:var(--blue);opacity:0;width:${Math.random()*4+2}px;height:${Math.random()*4+2}px;left:${Math.random()*100}%;bottom:${Math.random()*30}%;animation:orb ${Math.random()*8+6}s linear ${Math.random()*6}s infinite`;panel.appendChild(p);}
+
+  // Backend health check
+  async function checkBackend(){
+    const dot=document.getElementById('sdot'),txt=document.getElementById('stext');
+    try{
+      const r=await fetch(API_URL+'/',{signal:AbortSignal.timeout(5000)});
+      if(r.ok){dot.className='status-dot ok';txt.textContent='Connected to backend';}
+      else throw 0;
+    }catch{dot.className='status-dot err';txt.textContent='Backend offline — deploy App Service first';}
+  }
+  checkBackend();
+
+  function switchTab(t){
+    document.getElementById('form-in').style.display=t==='in'?'block':'none';
+    document.getElementById('form-reg').style.display=t==='reg'?'block':'none';
+    document.getElementById('tab-in').classList.toggle('active',t==='in');
+    document.getElementById('tab-reg').classList.toggle('active',t==='reg');
+    clearAlerts();
+  }
+  function clearAlerts(){['aerr','aok'].forEach(id=>{document.getElementById(id).style.display='none'});}
+  function showAlert(type,msg){clearAlerts();const el=document.getElementById(type==='err'?'aerr':'aok');el.textContent=msg;el.style.display='block';}
+  function setBusy(form,busy){
+    document.getElementById('btn-'+form+'-txt').style.display=busy?'none':'inline';
+    document.getElementById('btn-'+form+'-ld').style.display=busy?'inline-block':'none';
+    document.getElementById('btn-'+form).disabled=busy;
+  }
+  function togglePw(id,btn){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';btn.textContent=i.type==='password'?'👁':'🙈';}
+
+  async function doLogin(){
+    clearAlerts();
+    const email=document.getElementById('in-email').value.trim();
+    const pw=document.getElementById('in-pw').value;
+    if(!email)return showAlert('err','Please enter your email.');
+    if(!pw)return showAlert('err','Please enter your password.');
+    setBusy('in',true);
+    try{const r=await login(email,pw);window.location.href=r.role==='creator'?'creator.html':'index.html';}
+    catch(e){showAlert('err',e.message||'Login failed. Check your credentials.');}
+    finally{setBusy('in',false);}
+  }
+
+  async function doRegister(){
+    clearAlerts();
+    const u=document.getElementById('reg-user').value.trim();
+    const e=document.getElementById('reg-email').value.trim();
+    const p=document.getElementById('reg-pw').value;
+    if(!u)return showAlert('err','Username is required.');
+    if(!e)return showAlert('err','Email is required.');
+    if(p.length<8)return showAlert('err','Password must be at least 8 characters.');
+    setBusy('reg',true);
+    try{await register(u,e,p);showAlert('ok','✓ Account created! You can now sign in.');setTimeout(()=>switchTab('in'),1500);}
+    catch(e){showAlert('err',e.message||'Registration failed.');}
+    finally{setBusy('reg',false);}
+  }
+
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    if(document.getElementById('form-in').style.display!=='none')doLogin();
+    else doRegister();
+  });
+</script>
+</body>
+</html>

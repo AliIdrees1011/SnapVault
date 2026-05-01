@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>SnapVault — Browse</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div class="bg-grid"></div>
+<nav>
+  <div class="nav-logo">Snap<span class="dot">●</span>Vault</div>
+  <div class="nav-links"><a href="index.html" class="nav-link active">Browse</a></div>
+  <div class="nav-right">
+    <span class="nav-chip" id="nav-chip">CONSUMER</span>
+    <span style="font-size:12px;color:var(--text-2)" id="nav-user"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="container page-wrap">
+  <div class="page-header">
+    <h1 class="page-title">Explore <span class="accent">Photos</span></h1>
+    <p class="page-sub">Discover content uploaded by creators</p>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:2rem">
+    <div class="search-wrap" style="margin-bottom:0;flex:1;min-width:240px">
+      <input class="search-input" id="search-input" placeholder="Search by title, tag, location…" type="text"/>
+      <button class="btn btn-primary btn-sm" onclick="doSearch()">Search</button>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="clearSearch()">Clear</button>
+  </div>
+
+  <div id="search-label" style="display:none;font-size:12px;color:var(--text-2);margin-bottom:1rem"></div>
+  <div id="photo-grid" class="photo-grid"></div>
+  <div id="grid-loader" class="loader-wrap" style="display:none"><div class="spinner"></div><span>Loading photos…</span></div>
+  <div id="empty" class="empty-state" style="display:none">
+    <span class="empty-icon">📷</span>
+    <div class="empty-title">No photos found</div>
+    <div class="empty-sub">Try a different search or check back later</div>
+  </div>
+  <div style="text-align:center;margin-top:2.5rem" id="load-more-wrap" style="display:none">
+    <button class="btn btn-outline" id="load-more-btn" onclick="loadMore()">Load More</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg"></span></div>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/consumer.js"></script>
+<script>
+  requireAuth();
+  window.addEventListener('DOMContentLoaded',()=>{
+    const u=localStorage.getItem('sv_username');
+    if(u){document.getElementById('nav-user').textContent=u;document.getElementById('nav-chip').textContent=(localStorage.getItem('sv_role')||'consumer').toUpperCase();}
+    loadPhotos();
+    document.getElementById('search-input').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
+  });
+</script>
+</body>
+</html>
